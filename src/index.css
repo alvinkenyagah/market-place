@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@theme {
+  /* Brand Palette */
+  --color-cream: #FAF7F2;
+  --color-cream-dark: #F0EBE3;
+  --color-terracotta: #C4622D;
+  --color-terracotta-light: #F5E9E1;
+  --color-terracotta-dark: #9E4E22;
+  --color-green-brand: #2A5C3F;
+  --color-green-light: #E4EFE9;
+  --color-gold: #C9941A;
+  --color-gold-light: #FDF3DC;
+  --color-charcoal: #1C1917;
+  
+  /* Gray Scale Alignment */
+  --color-gray-700: #44403C;
+  --color-gray-500: #78716C;
+  --color-gray-300: #D6D3D1;
+  --color-gray-200: #E7E5E4;
+  --color-gray-100: #F5F5F4;
+
+  /* Typography */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Shape Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Animations & Keyframes */
+  --animate-fade-up: fadeUp 0.35s ease both;
+  
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Base Google Fonts Link */

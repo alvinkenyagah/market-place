@@ -150,20 +150,26 @@ export default function ServiceDetail() {
           </div>
 
           {/* Indicators & Thumbnails Strip */}
-          {service.images.length > 1 && (
-            <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-thin">
-              {service.images.map((img, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={`w-20 h-14 p-0 border-2 rounded-lg overflow-hidden shrink-0 bg-none transition-all duration-200 ${i === currentImgIndex ? 'border-amber-500 scale-95 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                  onClick={() => setCurrentImgIndex(i)}
-                >
-                  <img src={`${BACKEND_URL}${img}`} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+{/* Indicators & Thumbnails Strip */}
+{service.images.length > 1 && (
+  <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-thin">
+    {service.images.map((img, i) => (
+      <button
+        key={i}
+        type="button"
+        className={`w-20 h-14 p-0 border-2 rounded-lg overflow-hidden shrink-0 bg-none transition-all duration-200 ${i === currentImgIndex ? 'border-amber-500 scale-95 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'}`}
+        onClick={() => setCurrentImgIndex(i)}
+      >
+        {/* 🛠️ FIXED: Added Cloudinary HTTP conditional check for thumbnails */}
+        <img 
+          src={img?.startsWith('http') ? img : `${BACKEND_URL}${img}`} 
+          alt="" 
+          className="w-full h-full object-cover" 
+        />
+      </button>
+    ))}
+  </div>
+)}
         </div>
       )}
 
@@ -291,32 +297,39 @@ export default function ServiceDetail() {
       </div>
 
       {/* --- Fullscreen Lightbox Modal View --- */}
-      {isModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" 
-          onClick={() => setIsModalOpen(false)}
-        >
-          <button 
-            type="button" 
-            className="absolute top-4 right-6 text-white hover:text-slate-300 text-4xl font-light cursor-pointer select-none transition z-[10001]" 
-            onClick={() => setIsModalOpen(false)}
-          >
-            &times;
-          </button>
-          <div className="relative max-w-[95vw] max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={`${BACKEND_URL}${service.images[currentImgIndex]}`} 
-              alt="Expanded service presentation" 
-              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
-            />
-            {service.images.length > 1 && (
-              <div className="text-slate-300 bg-slate-900/60 px-4 py-1 rounded-full backdrop-blur-sm mt-4 text-xs font-medium">
-                Image {currentImgIndex + 1} of {service.images.length}
-              </div>
-            )}
-          </div>
+{/* --- Fullscreen Lightbox Modal View --- */}
+{isModalOpen && (
+  <div 
+    className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" 
+    onClick={() => setIsModalOpen(false)}
+  >
+    <button 
+      type="button" 
+      className="absolute top-4 right-6 text-white hover:text-slate-300 text-4xl font-light cursor-pointer select-none transition z-[10001]" 
+      onClick={() => setIsModalOpen(false)}
+    >
+      &times;
+    </button>
+    <div className="relative max-w-[95vw] max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+      
+      {/* 🛠️ FIXED: Added Cloudinary HTTP conditional check here */}
+      <img 
+        src={service.images[currentImgIndex]?.startsWith('http') 
+          ? service.images[currentImgIndex] 
+          : `${BACKEND_URL}${service.images[currentImgIndex]}`
+        } 
+        alt="Expanded service presentation" 
+        className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+      />
+      
+      {service.images.length > 1 && (
+        <div className="text-slate-300 bg-slate-900/60 px-4 py-1 rounded-full backdrop-blur-sm mt-4 text-xs font-medium">
+          Image {currentImgIndex + 1} of {service.images.length}
         </div>
       )}
+    </div>
+  </div>
+)}
     </div>
   );
 }

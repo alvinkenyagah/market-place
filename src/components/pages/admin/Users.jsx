@@ -35,7 +35,7 @@ export default function AdminUsers() {
     catch (e) { setError(e.message); }
   };
 
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = 'https://market-place-api-xlwv.onrender.com';
   
   const getUserAvatar = (userItem) => {
     if (userItem?.profileImage) {

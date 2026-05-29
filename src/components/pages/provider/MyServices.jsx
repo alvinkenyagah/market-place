@@ -9,7 +9,7 @@ function ServiceModal({ initial, onSave, onCancel }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = 'https://market-place-api-xlwv.onrender.com';
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 

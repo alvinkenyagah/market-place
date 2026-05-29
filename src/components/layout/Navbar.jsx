@@ -35,7 +35,7 @@ export default function Navbar() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = 'https://market-place-api-xlwv.onrender.com';
 
   const getAvatarSrc = () => {
     if (user?.profileImage) {

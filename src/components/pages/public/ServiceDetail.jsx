@@ -47,7 +47,7 @@ export default function ServiceDetail() {
     }
   };
 
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = 'https://market-place-api-xlwv.onrender.com';
   
   const getReviewerAvatar = (reviewer) => {
     if (reviewer?.profileImage) {

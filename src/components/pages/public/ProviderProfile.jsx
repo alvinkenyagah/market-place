@@ -45,7 +45,7 @@ export default function ProviderProfile() {
     </div>
   );
 
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = 'https://market-place-api-xlwv.onrender.com';
   
   const getAvatarSrc = () => {
     if (provider?.profileImage) {

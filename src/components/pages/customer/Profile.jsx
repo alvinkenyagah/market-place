@@ -94,7 +94,7 @@ export default function Profile() {
             {imagePreview ? (
               <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-terracotta" />
             ) : currentUser?.profileImage ? (
-              <img src={`http://localhost:5000${currentUser.profileImage}`} alt="Profile" className="w-24 h-24 rounded-full object-cover border-2 border-gray-200" />
+              <img src={`https://market-place-api-xlwv.onrender.com${currentUser.profileImage}`} alt="Profile" className="w-24 h-24 rounded-full object-cover border-2 border-gray-200" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-cream-dark border-2 border-gray-300 flex items-center justify-center font-display text-3xl font-bold text-charcoal select-none">
                 {userInitial}

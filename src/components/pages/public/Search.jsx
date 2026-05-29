@@ -231,8 +231,11 @@ export default function Search() {
             <div key={s._id} className="bg-white rounded-md overflow-hidden border border-gray-200 shadow-xs flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-1 group">
               <div className="relative overflow-hidden h-[140px] bg-gray-100">
                 {s.images?.[0] ? (
-                  <img src={`https://market-place-api-xlwv.onrender.com${s.images[0]}`} alt={s.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                ) : (
+<img 
+  src={s.images[0]?.startsWith('http') ? s.images[0] : `https://market-place-api-xlwv.onrender.com${s.images[0]}`} 
+  alt={s.title} 
+  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+/>                ) : (
                   <div className="w-full h-full flex items-center justify-center bg-cream-dark text-gray-400 font-body text-xs">No preview available</div>
                 )}
               </div>

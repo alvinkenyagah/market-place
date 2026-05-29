@@ -90,17 +90,24 @@ export default function Profile() {
         
         {/* COLUMN 1: Profile Avatar Summary Metadata Panel */}
         <div className="flex flex-col items-center text-center bg-white border border-gray-200 p-6 rounded-md shadow-xs h-fit">
-          <div className="relative mb-4 group">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-terracotta" />
-            ) : currentUser?.profileImage ? (
-              <img src={`https://market-place-api-xlwv.onrender.com${currentUser.profileImage}`} alt="Profile" className="w-24 h-24 rounded-full object-cover border-2 border-gray-200" />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-cream-dark border-2 border-gray-300 flex items-center justify-center font-display text-3xl font-bold text-charcoal select-none">
-                {userInitial}
-              </div>
-            )}
-          </div>
+<div className="relative mb-4 group">
+  {imagePreview ? (
+    <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-terracotta" />
+  ) : currentUser?.profileImage ? (
+    <img 
+      src={currentUser.profileImage.startsWith('http') 
+        ? currentUser.profileImage 
+        : `https://market-place-api-xlwv.onrender.com${currentUser.profileImage}`
+      } 
+      alt="Profile" 
+      className="w-24 h-24 rounded-full object-cover border-2 border-gray-200" 
+    />
+  ) : (
+    <div className="w-24 h-24 rounded-full bg-cream-dark border-2 border-gray-300 flex items-center justify-center font-display text-3xl font-bold text-charcoal select-none">
+      {userInitial}
+    </div>
+  )}
+</div>
 
           <h3 className="font-display text-lg font-bold text-charcoal leading-tight truncate w-full">{form.name || 'Anonymous User'}</h3>
           <p className="font-body text-xs text-gray-400 mt-0.5 truncate w-full">{currentUser?.email}</p>

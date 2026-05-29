@@ -113,11 +113,14 @@ export default function ServiceDetail() {
             className="group relative w-full h-64 sm:h-[400px] bg-slate-100 rounded-2xl overflow-hidden shadow-sm border border-slate-200 cursor-pointer" 
             onClick={() => setIsModalOpen(true)}
           >
-            <img 
-              src={`${BACKEND_URL}${service.images[currentImgIndex]}`} 
-              alt={`${service.title} view ${currentImgIndex + 1}`} 
-              className="w-full h-full object-cover block transition duration-500 scale-100 group-hover:scale-[1.02]"
-            />
+<img 
+  src={service.images[currentImgIndex]?.startsWith('http') 
+    ? service.images[currentImgIndex] 
+    : `${BACKEND_URL}${service.images[currentImgIndex]}`
+  } 
+  alt={`${service.title} view ${currentImgIndex + 1}`} 
+  className="w-full h-full object-cover block transition duration-500 scale-100 group-hover:scale-[1.02]"
+/>
             
             {/* Hover overlay action helper */}
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">

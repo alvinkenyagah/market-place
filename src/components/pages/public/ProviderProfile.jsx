@@ -16,10 +16,29 @@ export default function ProviderProfile() {
   const servicesPerPage = 4; // Adjust this number to change grid capacity
 
   useEffect(() => {
-    Promise.all([usersAPI.getUser(id), servicesAPI.list({ providerId: id }), reviewsAPI.forProvider(id)])
+    // 1. Reset states when the ID changes to prevent old data leaks
+    setLoading(true);
+    setCurrentPage(1); 
+    setError('');
+
+    Promise.all([
+      usersAPI.getUser(id), 
+      servicesAPI.list({ providerId: id }), 
+      reviewsAPI.forProvider(id)
+    ])
       .then(([u, s, r]) => { 
         setProvider(u.user); 
-        setServices(s.services || []); 
+        
+        // 2. Frontend Safeguard: Ensure we strictly match the current profile ID
+        // In case the backend returns all services by default.
+        const allServices = s.services || [];
+        const providerServices = allServices.filter(service => {
+          // Checks if service.provider matches either an object ID string or a nested object ID
+          const serviceProviderId = service.providerId?._id || service.providerId || service.provider;
+          return String(serviceProviderId) === String(id);
+        });
+
+        setServices(providerServices); 
         setReviews(r.reviews || []); 
       })
       .catch(e => setError(e.message))
@@ -144,7 +163,6 @@ export default function ProviderProfile() {
             </div>
           ) : (
             <>
-              {/* Made the wrapper grid gaps tighter and modified individual cards to be smaller */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {currentServices.map(s => (
                   <div key={s._id} className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">

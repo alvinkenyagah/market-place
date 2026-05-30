@@ -82,6 +82,10 @@ export const adminAPI = {
     return request('GET', `/admin/services${q ? '?' + q : ''}`);
   },
   removeService: (id) => request('DELETE', `/admin/services/${id}`),
+  
+  // 🆕 NEW: Added to toggle service suspension with optional notes payload
+  suspendService: (id, body) => request('PATCH', `/admin/services/${id}/suspend`, body),
+  
   bookings: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return request('GET', `/admin/bookings${q ? '?' + q : ''}`);

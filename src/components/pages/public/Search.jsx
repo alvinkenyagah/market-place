@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { servicesAPI } from '../../../services/api';
 import { ErrorMsg, StarRating } from '../../Shared';
 
-// ── Icons (inline SVG to avoid extra deps) ──────────────────────────────────
+// ── Icons (inline SVG) ──────────────────────────────────────────────────────
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -43,25 +43,36 @@ const XIcon = () => (
 );
 
 export default function Search() {
-  const [services, setServices]               = useState([]);
-  const [total, setTotal]                     = useState(0);
-  const [pages, setPages]                     = useState(1);
-  const [page, setPage]                       = useState(1);
-  const [loading, setLoading]                 = useState(false);
-  const [error, setError]                     = useState('');
-  const [viewMode, setViewMode]               = useState('grid'); // 'grid' | 'list'
+  const [services, setServices] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState('grid');
 
-  const [search, setSearch]                   = useState('');
-  const [location, setLocation]               = useState('');
-  const [minPrice, setMinPrice]               = useState('');
-  const [maxPrice, setMaxPrice]               = useState('');
-  const [dynamicCategories, setDynamicCategories] = useState([]);
+  // Input states (uncommitted values)
+  const [search, setSearch] = useState('');
+  const [location, setLocation] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [isDropdownOpen, setIsDropdownOpen]   = useState(false);
-  const [searchFocused, setSearchFocused]     = useState(false);
+
+  // Committed filter values used explicitly for API dispatch calls
+  const [activeFilters, setActiveFilters] = useState({
+    search: '',
+    location: '',
+    minPrice: '',
+    maxPrice: '',
+    categories: []
+  });
+
+  const [dynamicCategories, setDynamicCategories] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const dropdownRef = useRef(null);
-  const searchRef   = useRef(null);
+  const searchRef = useRef(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -72,6 +83,7 @@ export default function Search() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Initial lookup data mount
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -79,54 +91,99 @@ export default function Search() {
           const cats = await servicesAPI.getCategories();
           setDynamicCategories(cats);
         } else {
-          const res  = await fetch('https://market-place-api-xlwv.onrender.com/api/services/categories');
+          const res = await fetch('https://market-place-api-xlwv.onrender.com/api/services/categories');
           const cats = await res.json();
           setDynamicCategories(cats);
         }
       } catch (err) {
         console.error('Failed to load categories:', err);
       }
-      fetchServices(1);
     };
     loadInitialData();
   }, []);
 
-  const fetchServices = async (p = 1) => {
+  // Main implementation tracking search parameter execution triggers
+  const fetchServices = async (p = 1, currentFilters = activeFilters) => {
     setLoading(true);
     setError('');
     try {
       const params = { page: p, limit: 12 };
-      if (search)   params.search   = search;
-      if (location) params.location = location;
-      if (minPrice) params.minPrice = minPrice;
-      if (maxPrice) params.maxPrice = maxPrice;
-      if (selectedCategories.length > 0) params.category = selectedCategories.join(',');
+      if (currentFilters.search) params.search = currentFilters.search;
+      if (currentFilters.location) params.location = currentFilters.location;
+      if (currentFilters.minPrice) params.minPrice = currentFilters.minPrice;
+      if (currentFilters.maxPrice) params.maxPrice = currentFilters.maxPrice;
+      if (currentFilters.categories.length > 0) params.category = currentFilters.categories.join(',');
+
       const data = await servicesAPI.list(params);
-      setServices(data.services);
-      setTotal(data.total);
-      setPages(data.pages);
+      setServices(data.services || []);
+      setTotal(data.total || 0);
+      setPages(data.pages || 1);
       setPage(p);
     } catch (e) {
-      setError(e.message);
+      setError(e.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (e) => { e.preventDefault(); fetchServices(1); };
+  // Trigger loading when active filters alter
+  useEffect(() => {
+    fetchServices(1, activeFilters);
+  }, [activeFilters]);
 
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    setActiveFilters(prev => ({
+      ...prev,
+      search,
+      location,
+      minPrice,
+      maxPrice,
+      categories: selectedCategories
+    }));
+  };
+
+  // Pill alterations instantly sync into operational context filters
   const handleCategoryCheck = (cat) => {
-    setSelectedCategories(prev =>
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-    );
+    const updatedCats = selectedCategories.includes(cat)
+      ? selectedCategories.filter(c => c !== cat)
+      : [...selectedCategories, cat];
+    
+    setSelectedCategories(updatedCats);
+    setActiveFilters(prev => ({ ...prev, categories: updatedCats }));
+  };
+
+  const handlePriceChange = (type, value) => {
+    if (type === 'min') {
+      setMinPrice(value);
+      setActiveFilters(prev => ({ ...prev, minPrice: value }));
+    } else {
+      setMaxPrice(value);
+      setActiveFilters(prev => ({ ...prev, maxPrice: value }));
+    }
+  };
+
+  const handleLocationChange = (value) => {
+    setLocation(value);
+    setActiveFilters(prev => ({ ...prev, location: value }));
   };
 
   const clearAll = () => {
-    setSearch(''); setSelectedCategories([]); setLocation(''); setMinPrice(''); setMaxPrice('');
-    fetchServices(1);
+    setSearch('');
+    setLocation('');
+    setMinPrice('');
+    setMaxPrice('');
+    setSelectedCategories([]);
+    setActiveFilters({
+      search: '',
+      location: '',
+      minPrice: '',
+      maxPrice: '',
+      categories: []
+    });
   };
 
-  const hasActiveFilters = selectedCategories.length > 0 || location || minPrice || maxPrice;
+  const hasActiveFilters = activeFilters.categories.length > 0 || activeFilters.location || activeFilters.minPrice || activeFilters.maxPrice || activeFilters.search;
 
   const getPaginationRange = () => {
     const delta = 1, range = [];
@@ -142,11 +199,12 @@ export default function Search() {
     <div className="min-h-screen bg-cream">
 
       {/* ── Hero Search Banner ─────────────────────────────────────────────── */}
-      <div className="relative bg-charcoal overflow-hidden">
-        {/* Decorative circles */}
-        <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full border-[32px] border-terracotta/20 pointer-events-none" />
-        <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border-[24px] border-terracotta/10 pointer-events-none" />
-        <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-white/5 to-transparent pointer-events-none" />
+      <div className="relative bg-charcoal" style={{ zIndex: 100 }}>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full border-[32px] border-terracotta/20" />
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border-[24px] border-terracotta/10" />
+          <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-white/5 to-transparent" />
+        </div>
 
         <div className="relative max-w-[1100px] mx-auto px-8 py-12 max-sm:px-5 max-sm:py-8">
           <p className="font-body text-terracotta text-sm font-semibold tracking-widest uppercase mb-2">
@@ -160,7 +218,7 @@ export default function Search() {
           </p>
 
           {/* ── Main Search Bar ── */}
-          <form onSubmit={handleSearch}>
+          <form onSubmit={handleSearchSubmit}>
             <div
               className="relative flex items-center bg-white rounded-xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.3)] transition-all duration-300"
               style={{ boxShadow: searchFocused ? '0 8px 40px rgba(196,98,45,0.25), 0 0 0 2px rgba(196,98,45,0.4)' : '0 8px 40px rgba(0,0,0,0.3)' }}
@@ -178,7 +236,7 @@ export default function Search() {
                   className="flex-1 font-body text-sm text-charcoal bg-transparent outline-none placeholder:text-gray-400 min-w-0"
                 />
                 {search && (
-                  <button type="button" onClick={() => setSearch('')} className="text-gray-300 hover:text-gray-500 shrink-0 transition-colors">
+                  <button type="button" onClick={() => { setSearch(''); setActiveFilters(p => ({ ...p, search: '' })); }} className="text-gray-300 hover:text-gray-500 shrink-0 transition-colors">
                     <XIcon />
                   </button>
                 )}
@@ -190,7 +248,7 @@ export default function Search() {
                 <input
                   placeholder="Location"
                   value={location}
-                  onChange={e => setLocation(e.target.value)}
+                  onChange={e => handleLocationChange(e.target.value)}
                   className="flex-1 font-body text-sm text-charcoal bg-transparent outline-none placeholder:text-gray-400 min-w-0"
                 />
               </div>
@@ -224,7 +282,7 @@ export default function Search() {
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute top-[calc(100%+8px)] left-0 w-56 bg-white border border-gray-100 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] z-50 p-1.5 max-h-64 overflow-y-auto">
+                  <div className="absolute top-[calc(100%+8px)] left-0 w-56 bg-white border border-gray-100 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] z-[200] p-1.5 max-h-64 overflow-y-auto">
                     {dynamicCategories.length === 0 ? (
                       <div className="px-3 py-2 font-body text-xs text-gray-400 italic">No categories found</div>
                     ) : (
@@ -249,13 +307,13 @@ export default function Search() {
                 )}
               </div>
 
-              {/* Location pill (mobile) */}
+              {/* Location pill (mobile view sync) */}
               <div className="hidden max-md:flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 font-body text-sm text-white">
                 <LocationIcon />
                 <input
                   placeholder="Location"
                   value={location}
-                  onChange={e => setLocation(e.target.value)}
+                  onChange={e => handleLocationChange(e.target.value)}
                   className="bg-transparent outline-none placeholder:text-white/50 text-white w-28"
                 />
               </div>
@@ -267,7 +325,7 @@ export default function Search() {
                   placeholder="Min"
                   type="number"
                   value={minPrice}
-                  onChange={e => setMinPrice(e.target.value)}
+                  onChange={e => handlePriceChange('min', e.target.value)}
                   className="bg-transparent outline-none placeholder:text-white/50 text-white w-16"
                 />
                 <span className="text-white/40 text-xs">–</span>
@@ -275,12 +333,12 @@ export default function Search() {
                   placeholder="Max"
                   type="number"
                   value={maxPrice}
-                  onChange={e => setMaxPrice(e.target.value)}
+                  onChange={e => handlePriceChange('max', e.target.value)}
                   className="bg-transparent outline-none placeholder:text-white/50 text-white w-16"
                 />
               </div>
 
-              {/* Clear pill — only when filters active */}
+              {/* Clear pill — only shows up when dynamic filter settings exist */}
               {hasActiveFilters && (
                 <button
                   type="button"
@@ -294,9 +352,9 @@ export default function Search() {
             </div>
 
             {/* ── Active filter chips ── */}
-            {selectedCategories.length > 0 && (
+            {activeFilters.categories.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {selectedCategories.map(cat => (
+                {activeFilters.categories.map(cat => (
                   <span key={cat} className="inline-flex items-center gap-1.5 bg-terracotta/20 text-terracotta-light font-body text-xs font-semibold px-3 py-1 rounded-full border border-terracotta/30">
                     {cat}
                     <button type="button" onClick={() => handleCategoryCheck(cat)} className="opacity-70 hover:opacity-100 transition-opacity">
@@ -343,7 +401,7 @@ export default function Search() {
 
         <ErrorMsg msg={error} />
 
-        {/* Cards */}
+        {/* Cards rendering */}
         {loading ? (
           <div className={viewMode === 'grid'
             ? 'grid grid-cols-4 gap-5 max-lg:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1'
@@ -389,7 +447,6 @@ export default function Search() {
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-cream text-gray-300 font-body text-xs">No preview</div>
                   )}
-                  {/* Category badge */}
                   <span className="absolute top-2.5 left-2.5 font-body text-[10px] font-bold text-white bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
                     {s.category}
                   </span>
@@ -398,7 +455,8 @@ export default function Search() {
                   <h4 className="font-display text-sm font-semibold text-charcoal leading-snug line-clamp-2">{s.title}</h4>
                   <div className="flex items-center gap-1 font-body text-xs text-gray-400 mt-0.5">
                     <LocationIcon />
-                    <span>{s.location}</span>
+                    {/* <span className="line-clamp-1">{s.location}</span> */}
+                    <span className="line-clamp-1">{typeof s.location === 'object' ? s.location?.formattedAddress : s.location}</span>
                   </div>
                   <div className="flex items-center gap-1 mt-0.5">
                     <StarRating value={Math.round(s.averageRating)} />
@@ -443,7 +501,13 @@ export default function Search() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1 font-body text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><LocationIcon />{s.location}</span>
+                      {/* <span className="flex items-center gap-1"><LocationIcon />{s.location}</span> */}
+                    
+                    <span className="flex items-center gap-1">
+                      <LocationIcon />
+                      {typeof s.location === 'object' ? s.location?.formattedAddress : s.location}
+                    </span>
+                    
                     </div>
                     <div className="flex items-center gap-1 mt-1">
                       <StarRating value={Math.round(s.averageRating)} />

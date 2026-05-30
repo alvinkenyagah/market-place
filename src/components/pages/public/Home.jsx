@@ -142,7 +142,8 @@ export default function Home() {
                     KES {s.price.toLocaleString()}
                   </p>
                   <p className="font-body text-xs text-gray-500">
-                    {s.category} · {s.location}
+                    {/* 🛠️ FIXED: Safely render location object or string properties */}
+                    {s.category} · {typeof s.location === 'object' ? s.location?.formattedAddress : s.location}
                   </p>
                   <div className="flex items-center gap-1 font-body text-xs text-gray-500 mt-0.5">
                     <StarRating value={Math.round(s.averageRating)} />

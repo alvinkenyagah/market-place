@@ -90,7 +90,10 @@ export default function ServiceDetail() {
       <div className="mb-6">
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-950 mb-2">{service.title}</h2>
         <p className="text-slate-500 text-base font-medium">
-          {service.category} <span className="mx-1.5 text-slate-300">•</span> {service.location}
+          {service.category} 
+          <span className="mx-1.5 text-slate-300">•</span> 
+          {/* 🛠️ FIXED: Safely render the nested address string property if location is an object */}
+          {typeof service.location === 'object' ? service.location?.formattedAddress : service.location}
         </p>
       </div>
 
@@ -113,14 +116,14 @@ export default function ServiceDetail() {
             className="group relative w-full h-64 sm:h-[400px] bg-slate-100 rounded-2xl overflow-hidden shadow-sm border border-slate-200 cursor-pointer" 
             onClick={() => setIsModalOpen(true)}
           >
-<img 
-  src={service.images[currentImgIndex]?.startsWith('http') 
-    ? service.images[currentImgIndex] 
-    : `${BACKEND_URL}${service.images[currentImgIndex]}`
-  } 
-  alt={`${service.title} view ${currentImgIndex + 1}`} 
-  className="w-full h-full object-cover block transition duration-500 scale-100 group-hover:scale-[1.02]"
-/>
+            <img 
+              src={service.images[currentImgIndex]?.startsWith('http') 
+                ? service.images[currentImgIndex] 
+                : `${BACKEND_URL}${service.images[currentImgIndex]}`
+              } 
+              alt={`${service.title} view ${currentImgIndex + 1}`} 
+              className="w-full h-full object-cover block transition duration-500 scale-100 group-hover:scale-[1.02]"
+            />
             
             {/* Hover overlay action helper */}
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -150,26 +153,24 @@ export default function ServiceDetail() {
           </div>
 
           {/* Indicators & Thumbnails Strip */}
-{/* Indicators & Thumbnails Strip */}
-{service.images.length > 1 && (
-  <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-thin">
-    {service.images.map((img, i) => (
-      <button
-        key={i}
-        type="button"
-        className={`w-20 h-14 p-0 border-2 rounded-lg overflow-hidden shrink-0 bg-none transition-all duration-200 ${i === currentImgIndex ? 'border-amber-500 scale-95 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'}`}
-        onClick={() => setCurrentImgIndex(i)}
-      >
-        {/* 🛠️ FIXED: Added Cloudinary HTTP conditional check for thumbnails */}
-        <img 
-          src={img?.startsWith('http') ? img : `${BACKEND_URL}${img}`} 
-          alt="" 
-          className="w-full h-full object-cover" 
-        />
-      </button>
-    ))}
-  </div>
-)}
+          {service.images.length > 1 && (
+            <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-thin">
+              {service.images.map((img, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`w-20 h-14 p-0 border-2 rounded-lg overflow-hidden shrink-0 bg-none transition-all duration-200 ${i === currentImgIndex ? 'border-amber-500 scale-95 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  onClick={() => setCurrentImgIndex(i)}
+                >
+                  <img 
+                    src={img?.startsWith('http') ? img : `${BACKEND_URL}${img}`} 
+                    alt="" 
+                    className="w-full h-full object-cover" 
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -198,7 +199,9 @@ export default function ServiceDetail() {
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold text-slate-900 text-base">{service.providerId.name}</span>
-                <span className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">📍 {service.providerId.location}</span>
+                <span className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                  📍 {typeof service.providerId.location === 'object' ? service.providerId.location?.formattedAddress : service.providerId.location}
+                </span>
               </div>
             </div>
             <Link to={`/providers/${service.providerId._id}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm whitespace-nowrap">
@@ -297,39 +300,35 @@ export default function ServiceDetail() {
       </div>
 
       {/* --- Fullscreen Lightbox Modal View --- */}
-{/* --- Fullscreen Lightbox Modal View --- */}
-{isModalOpen && (
-  <div 
-    className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" 
-    onClick={() => setIsModalOpen(false)}
-  >
-    <button 
-      type="button" 
-      className="absolute top-4 right-6 text-white hover:text-slate-300 text-4xl font-light cursor-pointer select-none transition z-[10001]" 
-      onClick={() => setIsModalOpen(false)}
-    >
-      &times;
-    </button>
-    <div className="relative max-w-[95vw] max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-      
-      {/* 🛠️ FIXED: Added Cloudinary HTTP conditional check here */}
-      <img 
-        src={service.images[currentImgIndex]?.startsWith('http') 
-          ? service.images[currentImgIndex] 
-          : `${BACKEND_URL}${service.images[currentImgIndex]}`
-        } 
-        alt="Expanded service presentation" 
-        className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
-      />
-      
-      {service.images.length > 1 && (
-        <div className="text-slate-300 bg-slate-900/60 px-4 py-1 rounded-full backdrop-blur-sm mt-4 text-xs font-medium">
-          Image {currentImgIndex + 1} of {service.images.length}
+      {isModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" 
+          onClick={() => setIsModalOpen(false)}
+        >
+          <button 
+            type="button" 
+            className="absolute top-4 right-6 text-white hover:text-slate-300 text-4xl font-light cursor-pointer select-none transition z-[10001]" 
+            onClick={() => setIsModalOpen(false)}
+          >
+            &times;
+          </button>
+          <div className="relative max-w-[95vw] max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={service.images[currentImgIndex]?.startsWith('http') 
+                ? service.images[currentImgIndex] 
+                : `${BACKEND_URL}${service.images[currentImgIndex]}`
+              } 
+              alt="Expanded service presentation" 
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+            />
+            {service.images.length > 1 && (
+              <div className="text-slate-300 bg-slate-900/60 px-4 py-1 rounded-full backdrop-blur-sm mt-4 text-xs font-medium">
+                Image {currentImgIndex + 1} of {service.images.length}
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
-  </div>
-)}
     </div>
   );
 }

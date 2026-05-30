@@ -13,10 +13,10 @@ export default function ProviderProfile() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const servicesPerPage = 4; // Adjust this number to change grid capacity
+  const servicesPerPage = 4;
 
   useEffect(() => {
-    // 1. Reset states when the ID changes to prevent old data leaks
+    // Reset states when the ID changes to prevent stale data layout flashes
     setLoading(true);
     setCurrentPage(1); 
     setError('');
@@ -29,11 +29,9 @@ export default function ProviderProfile() {
       .then(([u, s, r]) => { 
         setProvider(u.user); 
         
-        // 2. Frontend Safeguard: Ensure we strictly match the current profile ID
-        // In case the backend returns all services by default.
+        // Frontend Safeguard: Ensure we strictly match the current profile ID
         const allServices = s.services || [];
         const providerServices = allServices.filter(service => {
-          // Checks if service.provider matches either an object ID string or a nested object ID
           const serviceProviderId = service.providerId?._id || service.providerId || service.provider;
           return String(serviceProviderId) === String(id);
         });
@@ -66,22 +64,31 @@ export default function ProviderProfile() {
 
   const BACKEND_URL = 'https://market-place-api-xlwv.onrender.com';
   
+  // Reusable helper to build clean asset paths safely
+  const cleanImageUrl = (path, fallbackUrl) => {
+    if (!path) return fallbackUrl;
+    if (path.startsWith('http')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${BACKEND_URL}${cleanPath}`;
+  };
+
   const getAvatarSrc = () => {
-    if (provider?.profileImage) {
-      if (provider.profileImage.startsWith('http')) return provider.profileImage;
-      const cleanImagePath = provider.profileImage.startsWith('/') ? provider.profileImage : `/${provider.profileImage}`;
-      return `${BACKEND_URL}${cleanImagePath}`;
-    }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(provider?.name || 'User')}&background=2A5C3F&color=fff&size=128`;
+    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(provider?.name || 'User')}&background=2A5C3F&color=fff&size=128`;
+    return cleanImageUrl(provider?.profileImage, defaultAvatar);
   };
 
   const getCustomerAvatar = (customer) => {
-    if (customer?.profileImage) {
-      if (customer.profileImage.startsWith('http')) return customer.profileImage;
-      const cleanImagePath = customer.profileImage.startsWith('/') ? customer.profileImage : `/${customer.profileImage}`;
-      return `${BACKEND_URL}${cleanImagePath}`;
+    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(customer?.name || 'User')}&background=F0EBE3&color=C4622D`;
+    return cleanImageUrl(customer?.profileImage, defaultAvatar);
+  };
+
+  const formatMemberDate = (dateString) => {
+    try {
+      if (!dateString) return '';
+      return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch (e) {
+      return '';
     }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(customer?.name || 'User')}&background=F0EBE3&color=C4622D`;
   };
 
   // --- Pagination Logic ---
@@ -133,9 +140,11 @@ export default function ProviderProfile() {
               </div>
             </div>
 
-            <p className="text-xs text-stone-500 font-medium">
-              Member since {new Date(provider.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
+            {provider.createdAt && (
+              <p className="text-xs text-stone-500 font-medium">
+                Member since {formatMemberDate(provider.createdAt)}
+              </p>
+            )}
           </div>
         </div>
 
@@ -145,7 +154,7 @@ export default function ProviderProfile() {
             <h3 className="text-lg font-bold text-charcoal flex items-center gap-2">
               <span className="text-terracotta">👤</span> About the Provider
             </h3>
-            <p className="text-stone-700 leading-relaxed text-sm sm:text-base border-l-4 border-earthGreen bg-cream-dark/40 p-4 rounded-r-xl">
+            <p className="text-stone-700 leading-relaxed text-sm sm:text-base border-l-4 border-earthGreen bg-cream-dark/40 p-4 rounded-r-xl whitespace-pre-line">
               {provider.bio}
             </p>
           </div>
@@ -168,15 +177,15 @@ export default function ProviderProfile() {
                   <div key={s._id} className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
                     <div className="space-y-0.5">
                       <p className="font-bold text-charcoal text-base group-hover:text-terracotta transition line-clamp-1">{s.title}</p>
-                      <p className="text-[10px] font-semibold tracking-wider text-stone-400 uppercase">{s.location}</p>
+                      <p className="text-[10px] font-semibold tracking-wider text-stone-400 uppercase line-clamp-1">{s.location?.formattedAddress || s.location || 'Unknown Location'}</p>
                     </div>
                     
                     <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
                       <div>
                         <span className="text-[10px] text-stone-400 block font-medium uppercase leading-none mb-0.5">Rate</span>
-                        <span className="text-base font-extrabold text-earthGreen">KES {s.price}</span>
+                        <span className="text-base font-extrabold text-earthGreen">KES {s.price?.toLocaleString() || s.price}</span>
                       </div>
-                      <Link to={`/services/${s._id}`} className="inline-flex items-center px-3 py-1.5 text-xs font-bold text-white bg-terracotta hover:bg-terracotta-dark shadow-sm rounded-md transition">
+                      <Link to={`/services/${s._id}`} className="inline-flex items-center px-3 py-1.5 text-xs font-bold text-white bg-terracotta hover:bg-terracotta-dark shadow-sm rounded-md transition whitespace-nowrap">
                         View Service
                       </Link>
                     </div>
@@ -252,7 +261,7 @@ export default function ProviderProfile() {
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                         <span className="font-bold text-charcoal text-sm sm:text-base">{r.customerId?.name || 'Anonymous User'}</span>
                         <span className="text-xs text-stone-500 font-medium">
-                          on <span className="italic text-stone-600 font-semibold">{r.serviceId?.title || 'Service'}</span>
+                          on <span className="italic text-stone-600 font-semibold line-clamp-1 inline">{r.serviceId?.title || 'Service'}</span>
                         </span>
                       </div>
                       
@@ -261,7 +270,7 @@ export default function ProviderProfile() {
                       </div>
                     </div>
                     
-                    <p className="text-stone-700 text-sm sm:text-base leading-relaxed bg-cream/50 rounded-xl p-3 border border-stone-100">
+                    <p className="text-stone-700 text-sm sm:text-base leading-relaxed bg-cream/50 rounded-xl p-3 border border-stone-100 whitespace-pre-line">
                       {r.comment}
                     </p>
                     

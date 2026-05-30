@@ -14,6 +14,16 @@ const LocationIcon = () => (
     <path d="M20 10c0 6-8 13-8 13s-8-7-8-13a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
   </svg>
 );
+const GpsIcon = ({ loading }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={loading ? "animate-spin text-terracotta" : ""}>
+    <circle cx="12" cy="12" r="7"/>
+    <circle cx="12" cy="12" r="3"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+  </svg>
+);
 const PriceIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
@@ -48,6 +58,7 @@ export default function Search() {
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('grid');
 
@@ -168,6 +179,72 @@ export default function Search() {
     setActiveFilters(prev => ({ ...prev, location: value }));
   };
 
+  // ── GPS Geolocation Handler ──────────────────────────────────────────────
+  const handleGpsDetection = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setGpsLoading(true);
+    setError('');
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          // Use OpenStreetMap Nominatim for clean reverse geocoding without api keys
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await res.json();
+
+          if (data && data.address) {
+            const addr = data.address;
+            
+            // Extract Area/Estate context
+            const area = addr.neighbourhood || addr.suburb || addr.residential || addr.commercial || addr.quarter || '';
+            // Extract City/Town context
+            const city = addr.city || addr.town || addr.village || addr.city_district || '';
+
+            let resolvedLocation = '';
+            if (area && city) {
+              resolvedLocation = `${area}, ${city}`;
+            } else {
+              resolvedLocation = area || city || data.name || 'Unknown Location';
+            }
+
+            handleLocationChange(resolvedLocation);
+          } else {
+            setError('Could not securely determine address components.');
+          }
+        } catch (err) {
+          setError('Failed to fetch readable address from your GPS location.');
+          console.error(err);
+        } finally {
+          setGpsLoading(false);
+        }
+      },
+      (geoError) => {
+        setGpsLoading(false);
+        switch (geoError.code) {
+          case geoError.PERMISSION_DENIED:
+            setError('Location permission denied.');
+            break;
+          case geoError.POSITION_UNAVAILABLE:
+            setError('Location information is unavailable.');
+            break;
+          case geoError.TIMEOUT:
+            setError('The request to get your location timed out.');
+            break;
+          default:
+            setError('An unknown Geolocation error occurred.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
   const clearAll = () => {
     setSearch('');
     setLocation('');
@@ -242,15 +319,24 @@ export default function Search() {
                 )}
               </div>
 
-              {/* Location */}
-              <div className="flex items-center gap-2.5 w-[200px] max-md:hidden px-4 py-3.5 border-r border-gray-100">
+              {/* Location (Desktop) */}
+              <div className="flex items-center gap-2.5 w-[240px] max-md:hidden px-4 py-3.5 border-r border-gray-100">
                 <span className="text-gray-400 shrink-0"><LocationIcon /></span>
                 <input
-                  placeholder="Location"
+                  placeholder="Area, City"
                   value={location}
                   onChange={e => handleLocationChange(e.target.value)}
                   className="flex-1 font-body text-sm text-charcoal bg-transparent outline-none placeholder:text-gray-400 min-w-0"
                 />
+                <button
+                  type="button"
+                  onClick={handleGpsDetection}
+                  disabled={gpsLoading}
+                  className="p-1 text-gray-400 hover:text-terracotta rounded-md hover:bg-gray-50 transition-all shrink-0 disabled:opacity-50"
+                  title="Use current location"
+                >
+                  <GpsIcon loading={gpsLoading} />
+                </button>
               </div>
 
               {/* Submit */}
@@ -307,15 +393,23 @@ export default function Search() {
                 )}
               </div>
 
-              {/* Location pill (mobile view sync) */}
-              <div className="hidden max-md:flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 font-body text-sm text-white">
+              {/* Location pill (Mobile View) */}
+              <div className="hidden max-md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 font-body text-sm text-white">
                 <LocationIcon />
                 <input
-                  placeholder="Location"
+                  placeholder="Area, City"
                   value={location}
                   onChange={e => handleLocationChange(e.target.value)}
-                  className="bg-transparent outline-none placeholder:text-white/50 text-white w-28"
+                  className="bg-transparent outline-none placeholder:text-white/50 text-white w-24 text-sm"
                 />
+                <button
+                  type="button"
+                  onClick={handleGpsDetection}
+                  disabled={gpsLoading}
+                  className="p-0.5 text-white/70 hover:text-white transition-all shrink-0"
+                >
+                  <GpsIcon loading={gpsLoading} />
+                </button>
               </div>
 
               {/* Price range pill */}
@@ -338,7 +432,7 @@ export default function Search() {
                 />
               </div>
 
-              {/* Clear pill — only shows up when dynamic filter settings exist */}
+              {/* Clear pill */}
               {hasActiveFilters && (
                 <button
                   type="button"
@@ -351,7 +445,7 @@ export default function Search() {
               )}
             </div>
 
-            {/* ── Active filter chips ── */}
+            {/* Active filter chips */}
             {activeFilters.categories.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {activeFilters.categories.map(cat => (
@@ -455,7 +549,6 @@ export default function Search() {
                   <h4 className="font-display text-sm font-semibold text-charcoal leading-snug line-clamp-2">{s.title}</h4>
                   <div className="flex items-center gap-1 font-body text-xs text-gray-400 mt-0.5">
                     <LocationIcon />
-                    {/* <span className="line-clamp-1">{s.location}</span> */}
                     <span className="line-clamp-1">{typeof s.location === 'object' ? s.location?.formattedAddress : s.location}</span>
                   </div>
                   <div className="flex items-center gap-1 mt-0.5">
@@ -501,13 +594,10 @@ export default function Search() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1 font-body text-xs text-gray-400">
-                      {/* <span className="flex items-center gap-1"><LocationIcon />{s.location}</span> */}
-                    
-                    <span className="flex items-center gap-1">
-                      <LocationIcon />
-                      {typeof s.location === 'object' ? s.location?.formattedAddress : s.location}
-                    </span>
-                    
+                      <span className="flex items-center gap-1">
+                        <LocationIcon />
+                        {typeof s.location === 'object' ? s.location?.formattedAddress : s.location}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 mt-1">
                       <StarRating value={Math.round(s.averageRating)} />
@@ -526,7 +616,7 @@ export default function Search() {
           </div>
         )}
 
-        {/* ── Pagination ── */}
+        {/* Pagination */}
         {pages > 1 && (
           <div className="flex items-center justify-center gap-1.5 mt-10">
             <button

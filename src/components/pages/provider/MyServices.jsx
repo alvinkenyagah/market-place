@@ -20,7 +20,7 @@ const formatShortAddress = (addressObj) => {
   const city = addressObj.city || addressObj.town || addressObj.village || addressObj.county || '';
   const country = addressObj.country || '';
 
-  return [building, street, estate, city, country]
+  return [building, street, estate, city]
     .filter(val => val.trim() !== '')
     .join(', ');
 };

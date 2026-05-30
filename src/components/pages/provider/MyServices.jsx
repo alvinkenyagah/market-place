@@ -12,6 +12,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+
+
+
 const formatShortAddress = (addressObj) => {
   if (!addressObj) return '';
   const building = addressObj.building || addressObj.amenity || addressObj.shop || addressObj.office || addressObj.industrial || '';
@@ -19,6 +22,14 @@ const formatShortAddress = (addressObj) => {
   const estate = addressObj.neighbourhood || addressObj.residential || addressObj.quarter || '';
   const city = addressObj.city || addressObj.town || addressObj.village || addressObj.county || '';
   const country = addressObj.country || '';
+
+
+
+
+
+
+
+
 
   return [building, street, estate, city]
     .filter(val => val.trim() !== '')
@@ -77,25 +88,32 @@ function ServiceModal({ initial, onSave, onCancel }) {
     fetchReadableAddress(lat, lng);
   };
 
-  const handleUseGPS = () => {
-    if (!navigator.geolocation) {
-      setError("Your system environment does not support device location context.");
-      return;
-    }
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        handleCoordinateSelect(latitude, longitude);
-        setGeoLoading(false);
-      },
-      (err) => {
-        setError(`Location access denied: ${err.message}`);
-        setGeoLoading(false);
-      },
-      { enableHighAccuracy: true }
-    );
-  };
+
+const [coords, setCoords] = useState(null);        
+const [capturedAt, setCapturedAt] = useState('');
+
+
+const handleUseGPS = () => {
+  if (!navigator.geolocation) {
+    setError("Your system environment does not support device location context.");
+    return;
+  }
+  setGeoLoading(true);
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+      handleCoordinateSelect(latitude, longitude);
+      setCoords({ lat: latitude, lng: longitude });
+      setCapturedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setGeoLoading(false);
+    },
+    (err) => {
+      setError(`Location access denied: ${err.message}`);
+      setGeoLoading(false);
+    },
+    { enableHighAccuracy: true }
+  );
+};
 
   const handleRemoveExistingImage = (indexToRemove) => {
     setExistingImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
@@ -212,7 +230,8 @@ function ServiceModal({ initial, onSave, onCancel }) {
           </div>
 
           <div className="flex flex-col gap-2 border border-[#E7E5E4] p-4 rounded-xl bg-[#FAF7F2]/50">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          
+            {/* <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-xs font-bold text-[#44403C] uppercase tracking-wider">📍 Operating Location Coordinates</label>
               <button
                 type="button"
@@ -222,7 +241,103 @@ function ServiceModal({ initial, onSave, onCancel }) {
               >
                 {geoLoading ? 'Acquiring...' : '🎯 Capture Device GPS'}
               </button>
-            </div>
+            </div> */}
+
+
+
+
+
+
+
+              <div className="space-y-3">
+  {/* Header row */}
+  <div className="flex flex-wrap items-center justify-between gap-3">
+    <label className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-widest text-stone-500">
+      <svg className="w-4 h-4 text-[#2A5C3F]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c-4.418-4.003-7-7.77-7-10.5a7 7 0 0114 0c0 2.73-2.582 6.497-7 10.5z"/>
+        <circle cx="12" cy="10.5" r="2.5"/>
+      </svg>
+      Operating Location Coordinates
+    </label>
+
+    <button
+      type="button"
+      onClick={handleUseGPS}
+      disabled={geoLoading || initial?.isAdminSuspended}
+      className={`
+        inline-flex items-center gap-2 px-3.5 h-8
+        text-[11px] font-medium uppercase tracking-widest text-white
+        rounded-md transition-all duration-150 relative overflow-hidden
+        ${geoLoading || initial?.isAdminSuspended
+          ? 'bg-stone-300 cursor-not-allowed'
+          : 'bg-[#2A5C3F] hover:bg-[#1E422C] active:scale-95 cursor-pointer'
+        }
+      `}
+    >
+      {geoLoading && (
+        <span className="absolute inset-0 rounded-md bg-white/15 animate-ping" />
+      )}
+      <svg
+        className={`w-3.5 h-3.5 ${geoLoading ? 'animate-spin' : ''}`}
+        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+      >
+        {geoLoading
+          ? <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 018-8"/>
+          : <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2m0 14v2M3 12h2m14 0h2m-4.93-7.07-1.41 1.41M7.34 16.66l-1.41 1.41M16.66 16.66l1.41 1.41M7.34 7.34 5.93 5.93M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+        }
+      </svg>
+      {geoLoading ? 'Acquiring…' : 'Capture Device GPS'}
+    </button>
+  </div>
+
+  {/* Coordinate inputs */}
+  <div className="grid grid-cols-2 gap-2.5">
+        {[
+          { id: 'lat', label: 'Latitude', placeholder: '–1.286389', value: coords?.lat ?? '' },
+          { id: 'lng', label: 'Longitude', placeholder: '36.817223', value: coords?.lng ?? '' },
+        ].map(({ id, label, placeholder, value }) => (  // 👈 add value here
+          <div key={id} className="flex flex-col gap-1">
+            <label htmlFor={id} className="text-[11px] uppercase tracking-wider text-stone-400">
+              {label}
+            </label>
+            <input
+              id={id}
+              type="text"
+              readOnly
+              value={value}
+              placeholder={placeholder}
+              className="h-9 px-3 rounded-md border border-stone-200 bg-stone-50 font-mono text-sm text-stone-700 placeholder-stone-300 focus:outline-none focus:ring-2 focus:ring-[#2A5C3F]/20 focus:border-[#2A5C3F] transition"
+            />
+          </div>
+        ))}
+  </div>
+
+  {/* Status indicator */}
+  <div className="flex items-center gap-2 text-[12px] text-stone-400">
+    <span className={`w-1.5 h-1.5 rounded-full transition-colors ${
+      geoLoading ? 'bg-[#2A5C3F] animate-pulse' : coords ? 'bg-[#2A5C3F]' : 'bg-stone-300'
+    }`} />
+    {geoLoading
+      ? 'Acquiring GPS signal…'
+      : coords
+        ? `Coordinates captured · ${capturedAt}`
+        : 'No coordinates captured'
+    }
+  </div>
+
+  {initial?.isAdminSuspended && (
+    <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-600">
+      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <circle cx="12" cy="12" r="9"/><path strokeLinecap="round" d="M12 8v4m0 4h.01"/>
+      </svg>
+      GPS capture is disabled — account suspended.
+    </div>
+  )}
+</div>
+
+
+
+
 
             <input 
               disabled={initial?.isAdminSuspended}
@@ -234,11 +349,11 @@ function ServiceModal({ initial, onSave, onCancel }) {
             />
 
             <div className="grid grid-cols-2 gap-3 text-3xs font-bold uppercase tracking-wider text-[#78716C]">
-              <div>Lat: <span className="text-[#1C1917] font-mono font-medium text-xs">{form.latitude || 'Empty'}</span></div>
-              <div>Lng: <span className="text-[#1C1917] font-mono font-medium text-xs">{form.longitude || 'Empty'}</span></div>
+              {/* <div>Lat: <span className="text-[#1C1917] font-mono font-medium text-xs">{form.latitude || 'Empty'}</span></div> */}
+              {/* <div>Lng: <span className="text-[#1C1917] font-mono font-medium text-xs">{form.longitude || 'Empty'}</span></div> */}
             </div>
 
-            <div className="h-48 w-full rounded-xl overflow-hidden border border-[#D6D3D1] shadow-inner relative z-0 mt-1">
+            {/* <div className="h-48 w-full rounded-xl overflow-hidden border border-[#D6D3D1] shadow-inner relative z-0 mt-1">
               <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -249,7 +364,7 @@ function ServiceModal({ initial, onSave, onCancel }) {
                   <Marker position={[Number(form.latitude), Number(form.longitude)]} />
                 )}
               </MapContainer>
-            </div>
+            </div> */}
           </div>
 
           {initial?._id && existingImages.length > 0 && (

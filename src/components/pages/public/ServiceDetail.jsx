@@ -1,25 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { servicesAPI, reviewsAPI, bookingsAPI } from '../../../services/api';
+// 1. Make sure to import chatsAPI here
+import { servicesAPI, reviewsAPI, bookingsAPI, chatsAPI } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { Spinner, ErrorMsg, SuccessMsg, StarRating } from '../../Shared';
 
 export default function ServiceDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [service, setService] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Booking states
   const [bookingDate, setBookingDate] = useState('');
   const [notes, setNotes] = useState('');
   const [bookingMsg, setBookingMsg] = useState('');
   const [bookingErr, setBookingErr] = useState('');
   const [booking, setBooking] = useState(false);
 
-  // States for Carousel and View Modal
+  // 2. Structured Inquiry States
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [inquiryData, setInquiryData] = useState({ description: '',});
+  const [inquiryErr, setInquiryErr] = useState('');
+  const [inquiryLoading, setInquiryLoading] = useState(false);
+
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -47,17 +55,36 @@ export default function ServiceDetail() {
     }
   };
 
+  // 3. Handle Inquiry Creation Submit
+const handleInquirySubmit = async (e) => {
+  e.preventDefault();
+  setInquiryErr('');
+  setInquiryLoading(true);
+
+  try {
+    const payload = {
+      serviceId: id,
+      description: inquiryData.description,
+    };
+
+    const res = await chatsAPI.createInquiry(payload);
+    
+    setIsInquiryModalOpen(false);
+    navigate(`/messages?chatId=${res.chatId}`);
+  } catch (err) {
+    setInquiryErr(err.message || 'Could not send inquiry request thread.');
+  } finally {
+    setInquiryLoading(false);
+  }
+};
+
+
   const BACKEND_URL = 'https://market-place-api-xlwv.onrender.com';
   
   const getReviewerAvatar = (reviewer) => {
     if (reviewer?.profileImage) {
-      if (reviewer.profileImage.startsWith('http')) {
-        return reviewer.profileImage;
-      }
-      const cleanImagePath = reviewer.profileImage.startsWith('/') 
-        ? reviewer.profileImage 
-        : `/${reviewer.profileImage}`;
-
+      if (reviewer.profileImage.startsWith('http')) return reviewer.profileImage;
+      const cleanImagePath = reviewer.profileImage.startsWith('/') ? reviewer.profileImage : `/${reviewer.profileImage}`;
       return `${BACKEND_URL}${cleanImagePath}`;
     }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewer?.name || 'User')}&background=E3F2FD&color=0D8ABC`;
@@ -92,7 +119,6 @@ export default function ServiceDetail() {
         <p className="text-slate-500 text-base font-medium">
           {service.category} 
           <span className="mx-1.5 text-slate-300">•</span> 
-          {/* 🛠️ FIXED: Safely render the nested address string property if location is an object */}
           {typeof service.location === 'object' ? service.location?.formattedAddress : service.location}
         </p>
       </div>
@@ -117,56 +143,27 @@ export default function ServiceDetail() {
             onClick={() => setIsModalOpen(true)}
           >
             <img 
-              src={service.images[currentImgIndex]?.startsWith('http') 
-                ? service.images[currentImgIndex] 
-                : `${BACKEND_URL}${service.images[currentImgIndex]}`
-              } 
+              src={service.images[currentImgIndex]?.startsWith('http') ? service.images[currentImgIndex] : `${BACKEND_URL}${service.images[currentImgIndex]}`} 
               alt={`${service.title} view ${currentImgIndex + 1}`} 
               className="w-full h-full object-cover block transition duration-500 scale-100 group-hover:scale-[1.02]"
             />
-            
-            {/* Hover overlay action helper */}
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <span className="bg-slate-900/80 px-4 py-2 rounded-full backdrop-blur-sm shadow-lg flex items-center gap-1.5">
                 🔍 Click to expand
               </span>
             </div>
-            
             {service.images.length > 1 && (
               <>
-                <button 
-                  type="button" 
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-800 font-bold text-lg flex items-center justify-center shadow-md transition transform active:scale-95 z-10 opacity-0 group-hover:opacity-100 sm:opacity-100" 
-                  onClick={prevImage}
-                >
-                  ⟨
-                </button>
-                <button 
-                  type="button" 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-800 font-bold text-lg flex items-center justify-center shadow-md transition transform active:scale-95 z-10 opacity-0 group-hover:opacity-100 sm:opacity-100" 
-                  onClick={nextImage}
-                >
-                  ⟩
-                </button>
+                <button type="button" className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-800 font-bold text-lg flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 sm:opacity-100" onClick={prevImage}>⟨</button>
+                <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-800 font-bold text-lg flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 sm:opacity-100" onClick={nextImage}>⟩</button>
               </>
             )}
           </div>
-
-          {/* Indicators & Thumbnails Strip */}
           {service.images.length > 1 && (
             <div className="flex gap-2 justify-start overflow-x-auto pb-1 scrollbar-thin">
               {service.images.map((img, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={`w-20 h-14 p-0 border-2 rounded-lg overflow-hidden shrink-0 bg-none transition-all duration-200 ${i === currentImgIndex ? 'border-amber-500 scale-95 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                  onClick={() => setCurrentImgIndex(i)}
-                >
-                  <img 
-                    src={img?.startsWith('http') ? img : `${BACKEND_URL}${img}`} 
-                    alt="" 
-                    className="w-full h-full object-cover" 
-                  />
+                <button key={i} type="button" className={`w-20 h-14 p-0 border-2 rounded-lg overflow-hidden shrink-0 bg-none transition-all duration-200 ${i === currentImgIndex ? 'border-amber-500 scale-95 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'}`} onClick={() => setCurrentImgIndex(i)}>
+                  <img src={img?.startsWith('http') ? img : `${BACKEND_URL}${img}`} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -185,17 +182,10 @@ export default function ServiceDetail() {
       <div className="mb-8">
         <h3 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Service Provider</h3>
         {service.providerId && (
-          <div className="flex items-center justify-between gap-4 p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-slate-50 flex items-center justify-center">
-                <img 
-                  src={getReviewerAvatar(service.providerId)} 
-                  alt={`${service.providerId.name}`} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(service.providerId.name)}&background=0D8ABC&color=fff`;
-                  }}
-                />
+                <img src={getReviewerAvatar(service.providerId)} alt={`${service.providerId.name}`} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold text-slate-900 text-base">{service.providerId.name}</span>
@@ -204,9 +194,23 @@ export default function ServiceDetail() {
                 </span>
               </div>
             </div>
-            <Link to={`/providers/${service.providerId._id}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm whitespace-nowrap">
-              View Profile
-            </Link>
+            
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <Link to={`/providers/${service.providerId._id}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm whitespace-nowrap">
+                View Profile
+              </Link>
+              
+              {/* 4. Contact Freelancer Action Trigger button */}
+              {user && user._id !== service.providerId._id && user.role === 'customer' && (
+                <button
+                  type="button"
+                  onClick={() => setIsInquiryModalOpen(true)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg shadow-sm transition whitespace-nowrap"
+                >
+                  Contact Freelancer
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -225,31 +229,13 @@ export default function ServiceDetail() {
             <form onSubmit={handleBook} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-slate-700">Preferred Date &amp; Time</label>
-                <input 
-                  type="datetime-local" 
-                  value={bookingDate} 
-                  onChange={e => setBookingDate(e.target.value)} 
-                  required 
-                  className="w-full px-3.5 py-2 border border-slate-300 rounded-xl shadow-sm bg-white text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
-                />
+                <input type="datetime-local" value={bookingDate} onChange={e => setBookingDate(e.target.value)} required className="w-full px-3.5 py-2 border border-slate-300 rounded-xl shadow-sm bg-white text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm" />
               </div>
-              
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-slate-700">Notes (optional)</label>
-                <textarea 
-                  value={notes} 
-                  onChange={e => setNotes(e.target.value)} 
-                  rows={3} 
-                  placeholder="Any special instructions or requirements…" 
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm"
-                />
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Any special instructions or requirements…" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm" />
               </div>
-              
-              <button 
-                type="submit" 
-                className="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50 mt-1" 
-                disabled={booking}
-              >
+              <button type="submit" className="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50 mt-1" disabled={booking}>
                 {booking ? 'Processing Appointment…' : 'Request Booking'}
               </button>
             </form>
@@ -259,11 +245,9 @@ export default function ServiceDetail() {
 
       {!user && (
         <p className="p-4 bg-amber-50 text-amber-900 text-sm font-medium rounded-xl border border-amber-200/60 mb-8">
-          <Link to="/login" className="text-amber-700 underline font-semibold hover:text-amber-800">Sign in</Link> to book this service.
+          <Link to="/login" className="text-amber-700 underline font-semibold hover:text-amber-800">Sign in</Link> to book or message this service provider.
         </p>
       )}
-
-      <hr className="border-t border-slate-200 my-8" />
 
       {/* --- Review List Layout Components --- */}
       <div className="mb-12">
@@ -275,16 +259,8 @@ export default function ServiceDetail() {
             {reviews.map(r => (
               <div key={r._id} className="flex gap-4 p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
                 <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-slate-50 flex items-center justify-center">
-                  <img 
-                    src={getReviewerAvatar(r.customerId)} 
-                    alt={`${r.customerId?.name || 'User'}`} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(r.customerId?.name || 'User')}&background=E3F2FD&color=0D8ABC`;
-                    }}
-                  />
+                  <img src={getReviewerAvatar(r.customerId)} alt={`${r.customerId?.name || 'User'}`} className="w-full h-full object-cover" />
                 </div>
-
                 <div className="flex flex-col grow min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                     <span className="font-semibold text-sm text-slate-900 truncate">{r.customerId?.name || 'Anonymous User'}</span> 
@@ -301,34 +277,70 @@ export default function ServiceDetail() {
 
       {/* --- Fullscreen Lightbox Modal View --- */}
       {isModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" 
-          onClick={() => setIsModalOpen(false)}
-        >
-          <button 
-            type="button" 
-            className="absolute top-4 right-6 text-white hover:text-slate-300 text-4xl font-light cursor-pointer select-none transition z-[10001]" 
-            onClick={() => setIsModalOpen(false)}
-          >
-            &times;
-          </button>
+        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
+          <button type="button" className="absolute top-4 right-6 text-white hover:text-slate-300 text-4xl font-light z-[10001]" onClick={() => setIsModalOpen(false)}>&times;</button>
           <div className="relative max-w-[95vw] max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={service.images[currentImgIndex]?.startsWith('http') 
-                ? service.images[currentImgIndex] 
-                : `${BACKEND_URL}${service.images[currentImgIndex]}`
-              } 
-              alt="Expanded service presentation" 
-              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
-            />
+            <img src={service.images[currentImgIndex]?.startsWith('http') ? service.images[currentImgIndex] : `${BACKEND_URL}${service.images[currentImgIndex]}`} alt="Expanded service presentation" className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl" />
             {service.images.length > 1 && (
-              <div className="text-slate-300 bg-slate-900/60 px-4 py-1 rounded-full backdrop-blur-sm mt-4 text-xs font-medium">
-                Image {currentImgIndex + 1} of {service.images.length}
-              </div>
+              <div className="text-slate-300 bg-slate-900/60 px-4 py-1 rounded-full backdrop-blur-sm mt-4 text-xs font-medium">Image {currentImgIndex + 1} of {service.images.length}</div>
             )}
           </div>
         </div>
       )}
+
+{/* ── STRUCTURED SERVICE INQUIRY MODAL LAYER ── */}
+{isInquiryModalOpen && (
+  <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs" onClick={() => setIsInquiryModalOpen(false)}>
+    <div 
+      className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden transform animate-in fade-in zoom-in-95 duration-150"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+        <h3 className="text-lg font-bold text-slate-900">Contact Freelancer</h3>
+        <button 
+          type="button" 
+          onClick={() => setIsInquiryModalOpen(false)}
+          className="text-slate-400 hover:text-slate-600 text-2xl font-light"
+        >
+          &times;
+        </button>
+      </div>
+
+      <form onSubmit={handleInquirySubmit} className="p-6 flex flex-col gap-4">
+        {inquiryErr && <ErrorMsg msg={inquiryErr} />}
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Your Message / Requirements</label>
+          <textarea
+            required
+            rows={5}
+            value={inquiryData.description}
+            onChange={(e) => setInquiryData({ description: e.target.value })}
+            placeholder="Describe what you are looking for, introduce your project requirements, or ask a question..."
+            className="w-full px-3.5 py-2 border border-slate-300 rounded-xl shadow-sm placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition"
+          />
+        </div>
+
+        <div className="mt-4 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+          <button
+            type="button"
+            onClick={() => setIsInquiryModalOpen(false)}
+            className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={inquiryLoading}
+            className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl shadow-sm transition disabled:opacity-50"
+          >
+            {inquiryLoading ? 'Starting Chat Thread...' : 'Send Message'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 }

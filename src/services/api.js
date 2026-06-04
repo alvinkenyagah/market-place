@@ -68,6 +68,16 @@ export const usersAPI = {
   getUser: (id) => request('GET', `/users/${id}`),
 };
 
+
+
+// Chats & Messages
+export const chatsAPI = {
+  createInquiry: (body) => request('POST', '/chats/inquiry', body),
+  listConversations: () => request('GET', '/chats'),
+  getMessages: (chatId) => request('GET', `/chats/${chatId}/messages`),
+};
+
+
 // Admin
 export const adminAPI = {
   dashboard: () => request('GET', '/admin/dashboard'),

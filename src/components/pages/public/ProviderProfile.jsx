@@ -136,7 +136,7 @@ export default function ProviderProfile() {
                   {provider.role}
                 </span>
                 {provider.location && <span className="flex items-center gap-1"><span>📍</span> {provider.location}</span>}
-                {provider.phone && <span className="flex items-center gap-1"><span>📞</span> {provider.phone}</span>}
+                {/* {provider.phone && <span className="flex items-center gap-1"><span>📞</span> {provider.phone}</span>} */}
               </div>
             </div>
 

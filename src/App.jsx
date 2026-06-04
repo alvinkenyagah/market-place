@@ -14,7 +14,7 @@ import Register from './components/pages/public/Register';
 import Search from './components/pages/public/Search';
 import ServiceDetail from './components/pages/public/ServiceDetail';
 import ProviderProfile from './components/pages/public/ProviderProfile';
-
+import Messages from './components/pages/public/Messages';
 // Customer
 import CustomerDashboard from './components/pages/customer/Dashboard';
 import MyBookings from './components/pages/customer/MyBookings';
@@ -51,6 +51,24 @@ function App() {
               <CustomerDashboard />
             </ProtectedRoute>
           } />
+
+
+          <Route path="/dashboard" element={
+              <ProtectedRoute roles={['customer']}>
+                <CustomerDashboard />
+              </ProtectedRoute>
+            } />
+
+
+
+            <Route path="/messages" element={
+              <ProtectedRoute roles={['customer', 'provider']}>
+                <Messages />
+              </ProtectedRoute>
+            } />
+
+
+
           <Route path="/my-bookings" element={
             <ProtectedRoute roles={['customer']}>
               <MyBookings />

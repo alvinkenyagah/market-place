@@ -82,6 +82,10 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-1">
           <Link to="/search" className={getLinkClass('/search')}>Search</Link>
 
+          {user && (
+            <Link to="/messages" className={getLinkClass('/messages')}>Messages</Link>
+          )}
+
           {user?.role === 'customer' && (
             <>
               <Link to="/dashboard" className={getLinkClass('/dashboard')}>Dashboard</Link>
@@ -206,6 +210,10 @@ export default function Navbar() {
         {/* Dynamic Drawer Route Navigation Target Stack */}
         <nav className="flex flex-col py-3 overflow-y-auto grow">
           <Link to="/search" className={getMobileLinkClass('/search')} onClick={handleMobileLinkClick}>Search</Link>
+
+          {user && (
+              <Link to="/messages" className={getMobileLinkClass('/messages')} onClick={handleMobileLinkClick}>Messages</Link>
+            )}
 
           {user?.role === 'customer' && (
             <>

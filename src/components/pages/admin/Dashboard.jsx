@@ -118,7 +118,7 @@ export default function AdminDashboard() {
       {/* Quick Navigation Panel */}
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
         <h3 className="text-lg font-bold text-slate-950 tracking-tight mb-4">Quick Management Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <Link 
             to="/admin/users" 
             className="flex items-center justify-center p-3 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm transition hover:bg-slate-50 hover:border-slate-300 text-center"
@@ -137,6 +137,16 @@ export default function AdminDashboard() {
           >
             📅 View All Bookings
           </Link>
+
+
+          <Link 
+            to="/admin/reports" 
+            className="flex items-center justify-center p-3 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm transition hover:bg-rose-50 hover:border-rose-200 text-center relative group"
+          >
+            ⚠️ Manage Violations & Reports
+          </Link>
+
+
         </div>
       </div>
     </div>

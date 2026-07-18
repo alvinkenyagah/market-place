@@ -41,22 +41,31 @@ export default function AdminServices() {
     }
   };
 
-  // 🆕 Suspension Handler
-  const handleConfirmSuspension = async () => {
-    if (!suspendTarget) return;
-    try {
-      await adminAPI.suspendService(suspendTarget.id, { note: suspensionNote });
-      const actionText = suspendTarget.isAdminSuspended ? 'reactivated' : 'suspended';
-      setMsg(`Service "${suspendTarget.title}" was successfully ${actionText}.`);
-      setSuspendTarget(null);
-      setSuspensionNote('');
-      load();
-    } catch (e) {
-      setError(e.message);
-      setSuspendTarget(null);
-      setSuspensionNote('');
-    }
-  };
+
+
+// AdminServices.jsx (Frontend Component)
+
+const handleConfirmSuspension = async () => {
+  if (!suspendTarget) return;
+  try {
+    // If it's already suspended, we are LIFTING it, so send an empty note payload
+    const payload = suspendTarget.isAdminSuspended ? { note: "" } : { note: suspensionNote };
+    
+    await adminAPI.suspendService(suspendTarget.id, payload);
+    
+    const actionText = suspendTarget.isAdminSuspended ? 'reactivated' : 'suspended';
+    setMsg(`Service "${suspendTarget.title}" was successfully ${actionText}.`);
+    setSuspendTarget(null);
+    setSuspensionNote('');
+    load();
+  } catch (e) {
+    setError(e.message);
+    setSuspendTarget(null);
+    setSuspensionNote('');
+  }
+};
+
+
 
   // Filtered array processing pipeline
   const filteredServices = services.filter(s => {

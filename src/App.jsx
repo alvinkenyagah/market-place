@@ -30,6 +30,8 @@ import AdminDashboard from './components/pages/admin/Dashboard';
 import AdminUsers from './components/pages/admin/Users';
 import AdminServices from './components/pages/admin/Services';
 import AdminBookings from './components/pages/admin/Bookings';
+import AdminReports from './components/pages/admin/AdminReports';
+
 
 function App() {
   return (
@@ -116,6 +118,11 @@ function App() {
           <Route path="/admin/bookings" element={
             <ProtectedRoute roles={['admin']}>
               <AdminBookings />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/reports" element={
+            <ProtectedRoute roles={['admin']}>
+              <AdminReports />
             </ProtectedRoute>
           } />
 

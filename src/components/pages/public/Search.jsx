@@ -276,7 +276,7 @@ export default function Search() {
     <div className="min-h-screen bg-cream">
 
       {/* ── Hero Search Banner ─────────────────────────────────────────────── */}
-      <div className="relative bg-charcoal" style={{ zIndex: 100 }}>
+  <div className="relative bg-charcoal z-10">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full border-[32px] border-terracotta/20" />
           <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border-[24px] border-terracotta/10" />

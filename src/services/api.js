@@ -68,15 +68,12 @@ export const usersAPI = {
   getUser: (id) => request('GET', `/users/${id}`),
 };
 
-
-
 // Chats & Messages
 export const chatsAPI = {
   createInquiry: (body) => request('POST', '/chats/inquiry', body),
   listConversations: () => request('GET', '/chats'),
   getMessages: (chatId) => request('GET', `/chats/${chatId}/messages`),
 };
-
 
 // Admin
 export const adminAPI = {
@@ -93,11 +90,35 @@ export const adminAPI = {
   },
   removeService: (id) => request('DELETE', `/admin/services/${id}`),
   
-  // 🆕 NEW: Added to toggle service suspension with optional notes payload
+  // Toggle service suspension with optional notes payload
   suspendService: (id, body) => request('PATCH', `/admin/services/${id}/suspend`, body),
   
   bookings: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return request('GET', `/admin/bookings${q ? '?' + q : ''}`);
   },
+
+  getReports: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request('GET', `/admin/reports${q ? '?' + q : ''}`);
+  },
+  dismissReport: (id) => {
+    return request('DELETE', `/admin/reports/${id}`);
+  },
+  toggleUserSuspension: (id) => {
+    return request('PATCH', `/admin/users/${id}/suspend`);
+  },
+  deleteUserAccount: (id) => {
+    return request('DELETE', `/admin/users/${id}`);
+  }
 };
+
+// Compliance Reports
+export const reportsAPI = {
+  create: (reportData) => {
+    return request('POST', '/reports', reportData);
+  }
+};
+
+
+

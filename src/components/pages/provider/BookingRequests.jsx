@@ -112,7 +112,6 @@ export default function BookingRequests() {
               >
                 {/* Left Side Customer Profile Info Section */}
                 <div className="flex items-start gap-4 min-w-0 flex-1">
-                  
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-[#FAF7F2] border border-[#E7E5E4] shrink-0 shadow-2xs">
                     <img 
                       src={getCustomerAvatar(b.customerId)} 
@@ -184,12 +183,9 @@ export default function BookingRequests() {
                     </>
                   )}
                   {b.status === 'accepted' && (
-                    <button 
-                      className="w-full md:w-auto px-4 py-2 bg-[#C4622D] hover:bg-[#9E4E22] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-2xs transition"
-                      onClick={() => updateStatus(b._id, 'completed')}
-                    >
-                      Mark Completed
-                    </button>
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#78716C] bg-white border border-[#E7E5E4] px-3 py-2 rounded-lg">
+                      In Progress
+                    </span>
                   )}
                 </div>
                 

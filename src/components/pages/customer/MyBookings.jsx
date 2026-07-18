@@ -76,7 +76,7 @@ export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [cancelMsg, setCancelMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [reviewedIds, setReviewedIds] = useState(new Set());
   const [showReview, setShowReview] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
@@ -96,11 +96,15 @@ export default function MyBookings() {
 
   useEffect(() => { load(); }, [statusFilter]);
 
-  const cancel = async (id) => {
-    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+  const updateStatus = async (id, status) => {
+    if (status === 'cancelled' && !window.confirm('Are you sure you want to cancel this booking?')) return;
+    if (status === 'completed' && !window.confirm('Are you sure you want to mark this service as completed?')) return;
+    
     try {
-      await bookingsAPI.updateStatus(id, 'cancelled');
-      setCancelMsg('Booking status updated to cancelled.');
+      setError('');
+      setSuccessMsg('');
+      await bookingsAPI.updateStatus(id, status);
+      setSuccessMsg(`Booking status successfully marked as ${status}.`);
       load();
     } catch (e) {
       setError(e.message);
@@ -137,9 +141,9 @@ export default function MyBookings() {
         </div>
         
         {/* Messages State block */}
-        {(cancelMsg || error) && (
+        {(successMsg || error) && (
           <div className="space-y-2">
-            {cancelMsg && <SuccessMsg msg={cancelMsg} />}
+            {successMsg && <SuccessMsg msg={successMsg} />}
             {error && <ErrorMsg msg={error} />}
           </div>
         )}
@@ -164,7 +168,7 @@ export default function MyBookings() {
 
         {/* Chronological Grid Items Stream Feed */}
         <div className="space-y-4">
-          {bookings.map(b => (
+          {!loading && bookings.map(b => (
             <div key={b._id} className="bg-white border border-[#E7E5E4] rounded-2xl p-5 sm:p-6 shadow-xs transition-shadow hover:shadow-sm space-y-4">
               
               {/* Card Meta Row Split Block */}
@@ -198,13 +202,22 @@ export default function MyBookings() {
               </div>
 
               {/* Action Toolbar Context Node Layer */}
-              <div className="flex items-center justify-end pt-1">
+              <div className="flex items-center justify-end pt-1 gap-2">
                 {b.status === 'pending' && (
                   <button 
                     className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#991B1B] border border-[#FEE2E2] bg-[#FEE2E2]/40 rounded-lg hover:bg-[#FEE2E2] transition shadow-2xs" 
-                    onClick={() => cancel(b._id)}
+                    onClick={() => updateStatus(b._id, 'cancelled')}
                   >
                     Cancel Booking
+                  </button>
+                )}
+
+                {b.status === 'accepted' && (
+                  <button 
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#C4622D] hover:bg-[#9E4E22] rounded-lg shadow-xs transition"
+                    onClick={() => updateStatus(b._id, 'completed')}
+                  >
+                    Mark Completed
                   </button>
                 )}
                 
